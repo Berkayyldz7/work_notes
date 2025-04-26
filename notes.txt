@@ -1,0 +1,895 @@
+
+
+
+
+## FONKSİYONLAR
+
+
+
+
+
+
+
+
+## SAHİPLİK MEKANİZMASI
+
+* Yeri geldiğinde çok detaylı işlenecek ancak şimdilik şunların bilinmesi ve hatırlanması önemlidir.
+
+1. Rustc yani compiler; derleme zamanında bellek güvenliğini garanti edecek şekilde çalışır. ( Borrow Checking )
+
+ - Syntax Check
+ - Type Check
+ - Life-time Analysis
+ - Borrow Checking
+
+
+2. Rust'ta her değerin bir sahibi vardır. Bir değer bir değişkene atandığında, o değişken değerin sahibi olur. Sahiplik kuralları şunlardır:
+
+ A) Her değerin, o değeri yöneten (sahip olan) tek bir değişkeni vardır.
+
+     - Tek Sahiplik: Bir değer, aynı anda yalnızca bir değişkene ait olabilir.
+
+     - Sahiplik Transferi (Move):Bir değeri bir değişkenden başka bir değişkene atadığınızda (örneğin, let y = x;), değerin sahipliği x'ten y'ye taşınır (move).
+       x artık geçerli bir değerin sahibi değildir (kullanımına izin verilmez).
+
+     - Sahiplik ve Kapsam (Scope): Bir değişkenin sahibi olduğu değer, değişkenin tanımlandığı kapsam (scope) sona erdiğinde otomatik olarak serbest bırakılır (bellekten silinir). 
+       Bu, garbage collector'a ihtiyaç duyulmadan bellek yönetimini sağlar.
+
+
+     - fn main() {
+
+         let s1 = String::from("merhaba"); // s1, "merhaba" string'inin sahibidir
+
+         let s2 = s1; // sahiplik s1'den s2'ye taşınır.  // println!("{}", s1); // Bu satır hata verir çünkü s1 artık geçerli değil!
+
+         println!("{}", s2); // Bu satır çalışır, s2 "merhaba"nın sahibidir.
+
+       }
+
+
+
+     NOT: COPY TRAİT İSTİSNASI
+        * i32 gibi bazı basit veri tipleri (Copy trait'ini implement edenler) için atama gerçekleştiğinde sahiplik taşınmaz, değerin bir kopyası oluşturulur. 
+          Bu nedenle, yukarıdaki örnekte x ve y her ikisi de atamadan sonra geçerlidir.
+
+
+	* Ödünç Alma (Borrowing):
+
+	 - Sahiplik prensibini ihlal etmeden verilere erişmenin bir yolu da ödünç almadır (referanslar aracılığıyla). 
+	   Bir referans (&) bir değerin sahipliğini almaz, sadece belirli bir süre için ona erişim izni alır.
+
+
+## DATA TYPES
+
+* Rust statically typed language'dir. Yani derleme zamanında her bir değişkenin type bilgisini bilmesi gerekir.
+
+
+# INTEGERS AND UNSIGNED
+
+* Default i32 olarak rust set eder.
+* u ile i arasındaki fark unsigned verileri içerir.
+* Bellekte stack'te veya statik bellekte saklanabilirler.
+
+
+* let x:i32 = 10; // Bellek durumunu inceleyelim
+
+
+Bellek Adresi:   | 0x500000 | 0x500001 | 0x500002 | 0x500003
+İçerik (Binary): | 00000000 | 00000000 | 00000000 | 00001010 
+
+                 <--------->|<-------->|<-------->|<--------->
+
+	          ( 8 bit )  ( 8 bit )  ( 8 bit )  ( 8 bit )         // 8 bit * 4 = 32 bit
+
+
+
+* x:i32 = 10 ifadesi binary olarak 00000000.00000000.00000000.00001010 ifadesine eşittir.
+
+* Bellek adresi ise bize verinin başladığı ve son bulduğu yere kadar olan konumlarını gösterir.
+
+* &x ifadesi ise; bize bu adresin başlangıç adresini verir. 0x5000000'e eşittir.
+
+ 
+
+NOT:
+* 10000001 eğer bir unsign veri ise bitlerin tamamı anlam ifade eder.
+
+* 10000001 eğer integer ise en soldaki bit yani en değerli bit işaretin pozitif mi yoksa negatif mi olduğunu temsil eder.
+ - 1 negatif sayıyı, 0 pozitif sayıyı temsil eder.
+ - 2'nin üsleri şeklinde gittiğinden en baştaki bitin değer ifade etmemesi anlam sayısını 1/2 kadar azaltır.
+
+
+
+NOT:
+
+* Byte Sırası (Endianness): Bellekte byte'ların saklanma sırası (little-endian veya big-endian) mimariye göre değişebilir. Yukarıdaki örnek little-endian'ı varsayar, yani en az anlamlı byte en düşük adreste saklanır.
+
+
+# FLOATS
+
+* Default f64'dür. 
+
+
+
+# BOOLEN 
+
+* True, false
+
+
+# CHAR
+
+* Emoji gibi karakterleri oluşturmamızı sağlar.
+* Her char 4 bayt yani 32 bit alan kaplar.
+* Genelde stack üzerinde saklanır.
+
+
+
+# TUPLE
+
+* Birden fazla veri tipini barındırabileceğimiz veri türüdür.
+
+* Tuple copy trait istisnası hariç içindeki verilerin yeni sahibi olur.
+
+
+
+* let benim_karisik_tuple = (10, String::from("Rust"), vec![1, 2, 3]);
+
+Stack:
+-------------------------------------
+| benim_karisik_tuple              |
+|-----------------------------------|
+| Eleman 0 (i32): 10                | <--- Doğrudan değer stack'te
+|-----------------------------------|
+| Eleman 1 (String):                |
+|   ptr: 0x1000 (Heap'teki "Rust" adresi) |
+|   len: 4                          |
+|   capacity: 4                     |
+|-----------------------------------|
+| Eleman 2 (Vec<i32>):             |
+|   ptr: 0x2000 (Heap'teki [1, 2, 3] adresi) |
+|   len: 3                          |
+|   capacity: 3                     |
+-------------------------------------
+
+Heap:
+-------------------------------------
+| Adres     | Değer               |
+|-----------|---------------------|
+| 0x1000    | 'R'                 | <--- "Rust" stringinin verisi
+| 0x1001    | 'u'                 |
+| 0x1002    | 's'                 |
+| 0x1003    | 't'                 |
+| ...       | ...                 |
+| 0x2000    | 1 (i32)             | <--- Vec'in verisi
+| 0x2004    | 2 (i32)             |
+| 0x2008    | 3 (i32)             |
+| ...       | ...                 |
+-------------------------------------
+
+
+
+# Tuple Sahipliği 
+
+
+    // Main() scope içinde ******
+
+    let my_str_2: String = String::from("abc");    // --> my_str_2 şu an String'in sahibi.
+
+    // ----------------------------------------
+
+    {
+        let tup_3:(String, f64, bool) = (my_str_2.clone(), 21.10, true);  // tup_3 şu an my_str_2'nin sahibi.
+        println!("{}", tup_3.0);
+    }            							  // Burdan itibaren tuple yaşam döngüsü sona erer ve my_str_2 bellekten silinir.
+
+    {
+        let tup_4 = (my_str_2, "abc", 21);				  // tup_4 my_str_2'nin yeni sahibi olur.
+        println!("{}",tup_4.0);
+    }
+
+
+
+
+
+
+# ARRAY TYPE
+
+* Diğer dillerin aksine rustta arrayler dinamik içerikler değildir yani array'in boyu hep sabittir.
+
+* Diğer dillerin aksine array^ler rustta tek bir veri tipini barındırırlar.
+
+* Array'Lar statik olduğu için stack üzerinde hayat bulurlar.
+
+* Eğer heap üzerinde dinamik işler yapmamız gerekiyorsa Vektör kullanmamız gerekir.
+
+
+* Önce type belirtilir sonra kaç elemanlı olacağı belirtilir.
+
+- let my_arr: [&str, 3] = ["a","b","c"];
+
+
+
+
+## RAM MİMARİSİ VE KULLANIM ALANLARI
+
+
+# Bellek Genel Bilgiler
+
+* Bellek üzerindeki adresler genellikle byte (8 bit) cinsinden ifade edilir. 
+* Dolayısıyla, 0x2000 adresi tek bir byte'lık (8 bit) bir bellek hücresini ifade eder.
+
+* Örneğin; 0x2000 adresinden 0x2003 adresine 3 byte (24 bit) mesafe vardır.
+
+*  Bir pointer bir değişkene işaret ettiğinde, aslında o değişkenin başladığı ilk byte'ın adresini tutar.
+
+
+
+
+1. STACK BOLGESİ
+
+* Fonksiyon çağrılarının, sabit local değişkenlerin ( let x = .. ) ve fonksiyon paremetrelerinin tutulduğu yerdir. ( Değişkenler tutulur veriler DEĞİL )
+
+* LIFO mantığı ile çalışır.
+
+
+
+2. HEAP BOLGESİ
+
+* Dinamik alan gerektiren değişkenler burada tutulur.
+
+* malloc, free, new gibi keywordler bu alanda yer tahsis eder.
+
+
+
+
+
+
+Adres: | 0x1000 | 0x1001 | 0x1002 | 0x1003 | 0x1004 | 0x1005 | 0x1006 | 0x1007 | ...
+İçerik:|        |        |        |        |        |        |        |        | ...
+
+
+
+Read-Only Statik Bellek Bölgesi (Örnek):
+
+Adres: | 0x2000 | 0x2001 | 0x2002 | 0x2003 | 0x2004 | 0x2005 | 0x2006 | 0x2007 | ...
+İçerik:|  'a'   |  'b'   |  'c'   |  '\0'  |  'd'   |  'f'   |  'g'   |  '\0'  | ...         // "a", "b", "c" aslında ASCII karakteri olarak tutulur. 8 bitlik veriler halinde.
+       ( "abc" )         		   ( "dfg" )
+
+       <---------------------------------->|<------------------------------------>          // &str; read-only bellekte bu uzunlukları set eder. !!!!!
+
+                     ("abc") 				   ("dfg")	
+
+
+
+* "abc" string literal'i read-only bölgedeki "0x2000" adresinden başlayarak saklanıyor. Sonundaki \0 (null karakter), string'in sonunu işaret ediyor.
+* "dfg" string literal'i ise read-only bölgedeki "0x2004" adresinden başlayarak saklanıyor.
+
+
+
+Stack Bölgesi (Örnek): 
+
+Adres: | 0x3000 | 0x3001 | 0x3002 | 0x3003 | 0x3004 | 0x3005 | 0x3006 | ...
+İçerik:| 0x2000 | 0x2010 |        |        |        |        |        | ...
+       ( my_var )
+
+
+---> let mut my_var = "abc" ; şeklinde bir tanımlama yaptığımızda; programa bu değişkeni Stack bölgesinde bir adrese koymasını söyleriz aslında.
+* Bu örnek için "my_var" şeklinde tanımladığımız değişken 0x3000'e eşittir ve değeri 0x2000'den gelir.
+
+
+Stack Bölgesi (Örnek - Güncellenmiş):
+
+Adres: | 0x3000 | 0x3001 | 0x3002 | 0x3003 | 0x3004 | 0x3005 | 0x3006 | ...
+İçerik:| 0x2004 | 0x2010 |        |        |        |        |        | ...
+       ( my_var )
+
+
+---> my_var = "dfg"; satırı çalıştığında;
+
+* my_var; RAM içindeki Stack bölgesinde 0x3000'deki adreste tutuluyor.
+* "dfg" string literal'inin adresi 0x2004'tür.
+* Bu satır çalıştırıldığında, my_var'ın (0x3000 adresindeki bellek hücresinin) içeriği güncellenir ve artık 0x2004 değerini tutar.
+
+
+SONUC:
+
+** Ne "abc" string literalinin nede "my_var" değişkeninin adresleri veya verileri bellek üzerinde DEĞİŞMEDİ !!
+
+** Artık "my_var"; bambaşka bir adrese referans	göstermeye başladı, "abc"'nin referansı 0x2000 bellek üzerinde hala yaşamaya devam ediyor. 
+
+*** Ne yazık ki artık "abc"'nin adresine referans edecek bir değişken bulunmadığı için bu adrese programın ömrü boyunca erişim sağlayamıyoruz. ( Belki başka satırlarda my_var2 = "abc" yazılırsa işletim sistemi "abc"'nin adresine yani 0x2000'e refer atayabilir ama garantisi yok )
+
+
+
+
+
+
+
+
+
+
+## STRINGS
+
+* Stringler rustta 2 türlü tanımlanabilirler.
+
+1. Salt Okunur Bellek Üzerinde ( read-only memory ) 
+2. Heap Üzerinde ( Heap memory )
+
+
+
+* Salt Okunur Bellek'teki veriler programın ömrü boyunca değişmezler. Bellek üzerinde kapladıkları alan değişmez ve &str yani pointer bize bu alanın adresinin başlangıç konumunu verir.
+
+- let x: &str = "abc";
+
+
+
+* Heap Memory Bellek'teki veriler programın dinamik verilere yani kapladıkları alan miktarı değişebilecek veriler için kullanılır. 
+
+- let x = String::new();
+
+
+* "merhaba dünya" Örneği:
+
+- Şimdi "merhaba dünya" string'ini inceleyelim:
+
+- 'm', 'e', 'r', 'h', 'a', 'b', 'a', ' ', 'd', 'ü', 'n', 'y', 'a'
+- Bu string'deki karakterlerin çoğu ASCII aralığındadır (0-127). Ancak dikkat etmeniz gereken bir karakter var: 'ü'.
+
+- ASCII Karakterler (1 byte/8 bit): 'm', 'e', 'r', 'h', 'a', 'b', 'a', ' ', 'd', 'n', 'y', 'a' (12 karakter * 8 bit = 96 bit)
+
+- 'ü' Karakteri (UTF-8): 'ü' karakteri ASCII aralığında olmadığı için UTF-8'de 2 byte (16 bit) ile temsil edilir.
+
+
+* Toplam Bellek Kullanımı:
+
+- Bu durumda "merhaba dünya" string'i bellek üzerinde şu kadar yer kaplar:
+
+- (12 karakter * 8 bit) + (1 karakter * 16 bit) = 96 bit + 16 bit = 112 bit
+
+
+
+Ek Bilgiler:
+
+* &str (String Literal): String literal'leri ("merhaba dünya") genellikle programın ikili dosyasının (executable) read-only veri bölümünde saklanır. Bellekte kapladıkları alan, UTF-8 kodlamasına göre karakterlerin kapladığı toplam byte sayısıdır.
+
+* String (Heap'te Oluşturulan String): String tipi, dinamik olarak büyüyebilen ve değiştirilebilen bir string türüdür. Bellekte kapladığı alan, içerdiği karakterlerin UTF-8 kodlamasına göre kapladığı byte sayısına ek olarak, String yapısının kendisi için de bir miktar ek yük (capacity, length gibi bilgileri tutmak için) içerir. Ancak temel karakter verisi yine UTF-8 ile kodlanır.
+
+
+
+
+
+
+
+
+
+
+## VARIABLES AND MUTABILITY
+
+# SHADOWING
+
+* Gölgeleme bir değişkeni tanımladıktan sonra onu yeniden tanımlayarak diğerini değiştirme işidir.
+* Gölgeleme let ve const ile tanımlanan her iki değer içinde yapılabilir.
+
+ - let x = 10; // x diye bir immutable değer tanımladık.
+ - let x = "abc"; // x değerini sanki ilk defa tanımlamışız gibi program yorumlar ve x'in değerini abc yapar. ( Assign etme yapmıyoruz yeniden declare ediyoruz. )
+
+Not:
+ - let x = 10; 
+   x = "abc"; // burada x'i yeni bir değer assign etmeye çalışıyoruz ama x mutable değil. Default olarak rust tüm değişkenleri immut tanımlar. Program error döner.
+
+
+# CONST 
+
+* Global kapsamda yani main fonksiyonunun süslü parantezleri dışında tanımlanabilir ve kullanılabilir. 
+
+* Basit işlemler dışında derleme zamanında hesaplanan verileri const ile TANINLAMIYORUZ.
+
+* const ile tanımlanan değerler, gerçek sabitlerdir. Değerleri derleme zamanında tam olarak bilinmelidir ve programın hiçbir yerinde değiştirilemezler.!!!
+
+ --> const tanımlarken hangi tür işlemlerin derleyici tarafından derleme zamanında değerlendirilebileceği hakkında daha fazla bilgi edinmek için Rust Referansı'nın sabit değerlendirme (constant evaluation) bölümüne        başvurulmasını  öneriyor. Bu bölümde, aritmetik işlemler, sabit fonksiyon çağrıları ve diğer derleme zamanı yetenekleri gibi detaylı bilgiler bulunur.
+
+* Tanımlama yapılırken tüm harfleri uppercase yazılır.
+
+ - const THREE_MINUTES_ON_CLOCK: u64 = 3 * 60 * 60;
+
+
+
+# LET
+
+* Let her zaman main fonksiyonun kapsamında tanımlanır.
+
+Not: Kapsam {} içindeki alanı temsil eder.
+
+
+# let VE const ARASINDAKI FARKLAR 
+
+1. En temel fark; let ile tanımlanan değişkenlerin değeri çalışma zamanında hesaplanabilir. Bu, fonksiyon çağrıları veya diğer dinamik işlemlerin sonucunu let ile tanımlanan değişkenlere atayabileceğiniz anlamına gelir.
+
+2. Programın çalışması bittiğinde let bellekten düşer.
+
+3. let ile beraber mutable değişkenler tanımlayabiliriz.
+
+
+
+
+
+
+
+
+
+## RESULT HANDLING
+
+* Result; 2 varyantlı bir enum olduğundan match bloğu kullanarak Result varyanlarını yönetebiliriz.
+* Eğer result varyantı Ok(param) ise;
+ - Örneğin; parse() metodu, başarılı bir dönüşümde Result<u32, ParseIntError> döner (yani Ok(u32) veya Err(ParseIntError)) // param bu örnek için u32 eşittir.
+
+
+
+
+
+
+
+## RESULT <T, E> 
+
+* Result gerek rust içinde built-in gelen bir enum'dur ve gerek bizim kendi yazdığımız fonksiyonların başarılı veya başarısız varyantlar return eden olarak düşünebiliriz..
+
+* Result denilince bilinmesi gereken ilk şey 2 varyantının olduğu bilgisidir.
+
+ - Ok()
+ - Err()
+
+
+* < T, E> = Sırasıyla Type ve Error bilgisidir.
+
+ - Result<String, MyErrEnums>
+ - Result<u32, MyErrEnums2>
+.
+.
+
+
+
+* Eğer biz kendi <Result T, E> tanımlamak istiyorsak önce bir enum oluşturmalıyız.
+* Daha sonra yazdığımız fonksiyonun bu resultı return etmesini sağlamalıyız.
+
+enum MyErrEnums{
+ err1,
+ err2
+ }
+
+fn returnResult() -> Result<String, MyErrEnums> { // }
+
+
+
+
+
+
+
+
+
+## TYPES IN RUST 
+
+# NUMBER
+
+* <i8>, <u8>, ... <i64>, <u64>
+
+* u = unsigned yani C dilindeki işaretsiz sayıların type değerini alır.
+* i = integer yani hem pozitif hem negatif sayıların type değerini bilgisini taşır.
+
+* Eğer geliştirici yani biz bir type set etmezsek rust default <i32> olarak tip ataması yapar.
+
+
+Let my_number: u8 = 20;
+
+
+# STRING
+
+Let my_string: String = String::new();
+
+
+# STRING TO NUMBER
+
+* Genellikle string bir veriyi number'a çevirmek durumunda kalıyorsak bu string veri bize inputtan gelmiştir.
+* Linux makinelerde; standart input; kaçış sonu karakterinide yani "\n" içerir. ( windows'da input; \n\v" içerir. )
+* Bu karakterlerden kurtulmak için string'lerde bulunan trim() metodunu önce çağırırız.
+
+* Daha sonra ise dönüşüm sağlamak için parse() metodunu kullanırız.
+
+Not: String'den number'a geçiş yapacağımız için yeni değişkenin type bilgisini vermemiz gerekiyor.
+
+
+use std::io
+
+//
+
+let mut my_str_from_io = String::new();                                     // Boş string oluşturduk
+
+io::Stdin().read_line(&mut my_str_from_io).except(msg);                     // read_line fonksiyonun okuyacağı değeri oluşturduğumuz string değere bağladık 
+
+Let mut my_num_from_str: u32 = my_str_from_io.trim().parse().except(msg);   // Type conversion işlemi icing "\n" gibi karakterleri silip i32 tipinde bir dönüşüm yaptık
+
+
+ 
+
+
+## Dilin Temelleri
+
+* use std::io;
+- Standart input output kütüphanesi, built-in gelir. 
+- Dosya okuma, kullanıcıdan input alma gibi operasyonları yönetir.
+
+* use std:io
+
+    let mut guess= String::new();       // Yeni bir boş dinamik ( mutable ) string tanımlar
+
+    io::stdin()                         // Standart input fonksiyonuyla beraber gelen metotları kullanabiliriz.
+    .read_line(&mut guess)
+    .expect("sth gone wrong please check the code");
+
+
+- // &mut guess; guess değişkeninin referansını temsil eder.
+
+
+
+
+
+
+
+## ENUM
+
+* Anladığım kadarıyla bizim varyantlar oluşturarak bir fonksiyonda birden fazla değer return edebilmemize olanak sağlıyor. --Fonksiyon bir enum return ettiğinde tabi
+
+* Bizde bu çoklu return edilen değerlerin hangi koşullarla eşlendiğini "match" ile kontrol ediyoruz.
+
+
+enum Sonuc {
+    Basarili,
+    Basarisiz,
+}
+
+fn bir_islem_yap() -> Sonuc {
+    // Burada karmaşık bir işlem yapıldığını varsayalım
+    let rastgele_sayi = rand::random::<f32>();
+    if rastgele_sayi > 0.5 {
+        Sonuc::Basarili
+    } else {
+        Sonuc::Basarisiz
+    }
+}
+
+fn main() {
+    let sonuc = bir_islem_yap();
+    match sonuc {
+        Sonuc::Basarili => println!("İşlem başarılı oldu!"),
+        Sonuc::Basarisiz => println!("İşlem başarısız oldu."),
+    }
+}
+
+
+
+
+
+
+
+## Temel Komutlar Giriş
+
+* rustc <file.rs> 
+- Bu komut ile ilgili dosya için hem linux hemde windows için execute edilebilecek dosyalar alırız.
+- ./main diyerek linux/macos'da; ". \main.exe" diyerek windowsta çalıştırılabilir dosyalar alırız.
+
+
+* cargo new <proje-adı> --bin
+- Bu komut ile sıfırdan ilgili klasörde yeni bir proje ve exec edilebilecek main file oluştururuz.
+- main.rs içerisinde compiler'ın programın başlangıç noktası kabul ettiği "fn main(){}" içerir.
+- Toml uzantılı dosyalar oluşturur paket yönetimi sağlar. ( package.json gibi )
+
+
+
+* cargo new <klasör-adı> --lib 
+- Bu komut ise başka bir .rs uzantılı dosya oluşturur. Library mantığı işte.
+- App.js içine controller.js eklemek gibi.
+- fn main(){} oluşturmaz. Çünkü bu arkadaşı ana porjede import edip kullanacağız gibi düşün.
+
+
+
+* cargo run 
+- Bu komut ile .toml uzantılı dosyanın olduğu yerde "çalıştırabiliyoruz" ve npm start demekle aynı iş.
+- .toml gidip ilgili paketleri varsa yükler ve main.rs dosyasını run eder.
+- DEVELOPMENT AŞAMASIDIR. Yani debug süreçlerini ve dosyalarını içerir.
+- opt-level = 0'dır. ( Hız ve performans optimizasyonları yapılmadı demek )
+- Hızlı geliştirme ve çalıştırma avantajı sunar ki lokalimizde kodumuzu test edebilelim.
+- target/debug klasöründe çıktı verir.
+    - Bu çıkı mimariye göre değişir ve ./main diyerek linux/macos'da; ". \main.exe" diyerek windowsta çalıştırılabilir dosyalar alırız.
+
+
+
+* cargo build
+- Cargo run ile aynı işi yapar sadece execute edilebilir dosya çıktısını run etmez sadece build alır.
+- Burdaki build production için uygun değildir sadece hata ayıklamaları için kullanılır.
+- target/debug klasöründe çıktı verir.
+
+
+* cargo build --release
+- Bu komut kodumuzu production moda taşır ve son user için hazır hale getirir.
+- Performans ve küçük dosya boyutuna odaklanır.
+- Yüksek performans optimizasyonları içerir.
+- opt-level = 3
+- debug = false, olarak eklenir ve debug dosyaları yer almaz.
+- target/release klasöründe çıktı verir.
+
+
+- Build alındığında dikkat edilmesi gereken en önemli husus harici kütüphanelerin "statik" mi yoksa "dinamik" bağlandığı bilgisidir.
+
+- "STATIK" bağlama; harici kütüphaneleri de ( corgo add rand dedin mesela ) binary çevirir ve çıktı verdiği kaynak dosyaya ekler. Dolayısıyla hedef sistemde bu bağımlılıkları indirme ihtiyacı olmaz.
+- "DINAMIK" bağlama; harici kütüphaneleri özellikle C kütüphanelerini binary çevirmez çıktı verdiği dosyada eklemez. Dolayısıyla bu bağımlılıkların hedef sistemde yüklü olması gerekir.
+
+
+- Cross-compilation ise hedef bilgisayarın farklı işletim sistemine sahip olduğu durumlar için kullanılır.
+
+
+* cargo check
+- tüm işlerin doğru yapılıp yapılmadığını test eder.
+
+
+
+
+* cargo add <crate-name>
+- npm i <paket-adı> demekle aynı iş.
+
+
+
+* cargo add <crate-name>@0.8.5
+- Belirtilen versionu indirir.
+
+
+* cargo add --dev <crate-name>
+- npm i nodemon --dev demekle aynı iş
+
+
+
+* cargo doc --open
+- Bu muhteşem komut sayesinde projendeki tüm external cratelerle ilgili harika bir web döküman oluşturur ve sana sunar.
+
+
+
+
+## Rust Compiler ( Genel Bilgiler )
+
+* rustc 
+- rustc ile yazdığımız kodların hangi aşamalardan geçerek derlendiği ile ilgili bilgilere ulaşabiliyoruz.
+- Bu komut ile compiler çağırıyoruz.
+
+
+* rustc --help 
+- Bu komut ile çalıştırabileceğimiz flagları ve atrributeları görebiliriz.
+
+
+* rustc --emit asm <file-name.rs>
+- bize .s uzantılı bir assembly çıktısı verir.
+
+
+
+## Rustup
+
+* rustup doc 
+- Localimizde buit-in gelen dökümantasyonları açar.
+
+
+
+
+
+
+
+------------------- road map ve kaynakalr -------------------
+
+
+1. Bellek Yönetimi ve Sahiplik (Ownership, Borrowing, Lifetimes):
+
+Kavramlar: Stack vs. Heap, Sahiplik Kuralları, Ödünç Alma Kuralları, Yaşam Süreleri (Derleyici Tarafından Nasıl Analiz Edildiği).
+Öğrenme Kaynakları:
+The Rust Programming Language (Resmi Kitap): Özellikle Bölüm 4, 5 ve 10 bu konuları detaylıca ele alıyor.
+Rust by Example: Sahiplik ve ödünç alma ile ilgili çeşitli örnekler sunuyor.
+"Common Rust Lifetime Misconceptions" (Blog Yazıları/Makaleler): Yaşam süreleriyle ilgili yaygın yanılgıları anlamak için faydalı olabilir.
+
+2. Eş Zamanlılık (Concurrency) ve Paralellik (Parallelism):
+
+Kavramlar: İş Parçacıkları (Threads - std::thread), Mesajlaşma (mpsc), Paylaşımlı Durum ve Senkronizasyon Primitifleri (Mutex, RwLock, Arc, Atomik Tipler), Veri Yarışları (Data Races), Deadlock.
+Öğrenme Kaynakları:
+The Rust Programming Language (Resmi Kitap): Bölüm 16 eş zamanlılığı kapsıyor.
+"The Rustonomicon" (Resmi Kitap - Gelişmiş Konular): Güvensiz Rust ve eş zamanlılık detaylarına iniyor.
+"Rust Atomics and Locks" (Kitap): Daha derinlemesine bir kaynak.
+Rust Blog ve Topluluk Makaleleri: Farklı eş zamanlılık yaklaşımlarını ve desenlerini anlamak için.
+
+3. Asenkron Programlama (Async/Await):
+
+Kavramlar: Futures, Executors, Runtimes (Tokio, Async-std), Non-blocking I/O, Event Loop'un Rust'taki Yansıması (Futures ve Executor Modeli).
+Öğrenme Kaynakları:
+"The Async Book" (Resmi Kaynak): Rust'ta asenkron programlamanın temellerini ve nasıl çalıştığını anlatıyor.
+Tokio ve Async-std Dokümantasyonları: Bu popüler runtime'ların API'lerini ve nasıl çalıştıklarını anlamak önemli.
+Rust Blog ve Topluluk Makaleleri: Asenkron programlamadaki farklı desenler ve en iyi uygulamalar hakkında.
+
+4. Hata Yönetimi:
+
+Kavramlar: Result ve Option Tipleri, panic!, ? Operatörü, Özel Hata Türleri, From Trait (Hata Dönüşümü).
+Öğrenme Kaynakları:
+The Rust Programming Language (Resmi Kitap): Bölüm 9 hata yönetimini ele alıyor.
+Rust Blog ve Topluluk Makaleleri: İyi hata yönetimi stratejileri ve desenleri hakkında.
+
+5. Trait Sistemi ve Nesne Güvenliği (Object Safety):
+
+Kavramlar: Trait'ler, Trait Nesneleri (dyn Trait), Statik ve Dinamik Dispatch, Nesne Güvenliği Kuralları.
+Öğrenme Kaynakları:
+The Rust Programming Language (Resmi Kitap): Bölüm 10 ve 17 trait'leri ve trait nesnelerini kapsıyor.
+Rust Blog ve Topluluk Makaleleri: Trait nesnelerinin kullanım alanları ve sınırlamaları hakkında.
+
+
+6. Makro Sistemi:
+
+Kavramlar: Bildirimsel (Declarative) Makrolar (macro_rules!), Prosedürel (Procedural) Makrolar (Attribute Macros, Function-like Macros, Derive Macros), Makro Hijyeni.
+Öğrenme Kaynakları:
+"The Little Book of Rust Macros" (Topluluk Kaynağı): Makrolara giriş için iyi bir kaynak.
+"The Rust Programming Language" (Resmi Kitap): Bölüm 19 makroları anlatıyor.
+syn ve quote Crates'leri Dokümantasyonları: Prosedürel makro yazmak için önemli kütüphaneler.
+
+7. Derleyici ve Derleme Süreci:
+
+Kavramlar: Lexing, Parsing, Semantic Analysis, MIR (Mid-level Intermediate Representation), LLVM, Derleme Aşamaları.
+Öğrenme Kaynakları: Bu konular genellikle daha ileri düzey kaynaklarda veya Rust'ın iç işleyişini anlatan blog gönderilerinde bulunabilir. Resmi kitapta doğrudan detaylı bir bölüm olmayabilir.
+Rustc Kaynak Kodunu İncelemek (İleri Düzey): Gerçekten derinlemesine anlamak için.
+Rust Compiler Team Blog Gönderileri: Derleyici geliştirmeleri ve mimarisi hakkında bilgiler içerebilir.
+
+8. Standart Kütüphane ve Temel Crates'ler:
+
+Kavramlar: std::collections, std::io, std::fs, std::net, serde, rayon (popüler crates). Bu kütüphanelerin altında yatan veri yapıları ve algoritmalar.
+Öğrenme Kaynakları:
+Rust Standart Kütüphane Dokümantasyonu: Her bir modülün ve tipin nasıl çalıştığını anlamak için.
+Popüler Crates'lerin Dokümantasyonları: İhtiyaç duyduğunuz kütüphanelerin detaylarını öğrenmek için.
+Öğrenme Yaklaşımı:
+
+Aşamalı İlerleme: Temel kavramları (sahiplik, ödünç alma) sağlamlaştırdıktan sonra daha ileri konulara geçin.
+Pratik Yapmak: Teorik bilgileri kod yazarak pekiştirin. Rustlings ve Exercism gibi platformlar bu konuda çok yardımcı olabilir.
+Merak Etmek ve Araştırmak: Karşılaştığınız her "neden böyle?" sorusunun peşine düşün. Rust'ın tasarım kararlarının arkasındaki mantığı anlamaya çalışın.
+Toplulukla Etkileşim: Rust topluluğu çok yardımseverdir. Takıldığınız noktalarda forumlara, Discord sunucularına veya Stack Overflow'a soru sormaktan çekinmeyin.
+
+
+
+
+
+
+
+
+
+********************************************************************************************************************
+
+## Gemini Sorduğum Sorular.
+
+
+1. integer değişkenler bellekte nerede saklanır ? 
+
+2. Statik Bellek nedir ?
+
+* Global Değişkenler: Programın en üst seviyesinde (fonksiyonların dışında) tanımlanan static anahtar kelimesiyle belirtilen integer değişkenler statik bellekte saklanır.
+
+3. Little endian mimari nedir ?
+
+4. Statik bellek ile read-only statik bellek farklı yerler mi?
+
+* Hayır, statik bellek ile read-only statik bellek farklı fiziksel yerler değildir. Read-only statik bellek, statik bellek bölgesinin bir alt bölümü veya bir özelliğidir.
+
+5. deferance etme nedir ve niye kullanılır ?
+
+6. char emoji oluşturmamıza yarıyor yani bide nedir bi 4 bayt meselesi neden önemli diğer stringlerden ne farkı var ?
+
+7. let x = "merhaba dünya"; bellek üzerinde kaç bit yer kaplar ? Her ascii karakteri 7 bit kaplıyorsa merhaba dünya 13 * 7 = 91 bit mi kaplar?
+
+8. Stack üzerinde saklanmayla heap üzerinde saklanma arasında ne var
+
+9. tuple nedir ve bellek üzerinde nerede hayat bulur ?
+
+* Tuple'lar genellikle stack üzerinde, elemanları ardışık bir şekilde yerleştirilerek hayat bulur. Eğer tuple dinamik boyutlu veri yapıları içeriyorsa, tuple stack üzerinde bu verilerin heap üzerindeki konumlarına işaret eden referansları tutar. Derleyici, elemanların türlerine göre bellek ayırır ve hizalama kurallarını uygular. Tuple'ların sabit boyutu, derleyicinin bellek düzenini derleme zamanında belirleyebilmesini sağlar, bu da performansa katkıda bulunur.
+
+10. bellek üzerindeki hücreler örneğin 0x2000 adresi 8 bitlik mi yer tutar ?
+
+* evet 
+
+11. Arrayla bellekte nasıl tutulur ?
+
+* Çoğu dilde arrayler bellek üzerinde bitişik adreslerde ( a contiguous chunk of memory ) ve sabit boyutlu olarak tutulur. Arraylerin dinamik boyutlu olduğu dillerde bile bu böyledir sadece farklı mekanizmalar kullanılır.
+
+12. Cache Locality nedir ?
+
+* Önbellek mekanizmasıdır. Verilerin bir ön belleğe yüklenip ordan hızlı bir şekilde erişime açılması prensibine dayanır.
+
+
+13. Rustta bir fonksiyon declare ederken her hangi bir yerde tanınlama yapabilir miyim ?
+
+* Evet, unutmaa fonksiyonlar tanımlandıkları scope ölçüsünde yaşarlar ve ölürler. Alt scopta tanımlı bir fonksiyona üst stopta erişilemez.
+
+
+14. Expression ve statment arasındaki fark nedir ?
+
+15. Eğer bir expression sonuna ; koyarsam onu statement olarak mı döndürürüm ?
+
+* Evet çoğu durumda boş tuple () döner.
+
+
+16. Harici C Kütüphaneleri Nedir? (Hazır Yapı Taşları Gibi)
+
+Şöyle düşünün: İnşa ettiğiniz bir Rust projesi için çok özel bir "yapı taşına" ihtiyacınız var. Bu yapı taşı, Rust'ın standart kütüphanesinde veya yaygın Rust crate ekosisteminde bulunmuyor. Ancak bu işi mükemmel bir şekilde yapan, yıllardır kullanılan ve güvenilir bir "yapı taşı" C dilinde yazılmış ve hazır durumda. İşte bu hazır C kod parçalarına harici C kütüphaneleri diyoruz.
+
+Bu kütüphaneler, derlenmiş kod (genellikle .so uzantılı Linux'ta, .dylib macOS'ta veya .dll Windows'ta bulunur) olarak sisteminizde yer alır ve Rust programınızın bu kütüphanelerdeki fonksiyonları kullanabilmesi için özel bir mekanizma gerekir.
+
+Harici C Kütüphanelerine Ne Zaman İhtiyaç Duyarsınız? (Özel Aletlere İhtiyaç Duyduğunuzda)
+
+Rust projelerinizde harici C kütüphanelerine ihtiyaç duyabileceğiniz bazı yaygın durumlar şunlardır:
+
+Sistem Seviyesi İşlemler: İşletim sisteminin düşük seviyeli API'lerine (Application Programming Interface - Uygulama Programlama Arayüzü) doğrudan erişmeniz gerektiğinde. Örneğin:
+
+Grafik ve Pencereleme Sistemleri: X11 (Linux), Wayland (Linux), Cocoa (macOS), WinAPI (Windows) gibi grafik ve pencere yönetimi sistemleriyle etkileşim kurmak için genellikle bu sistemlerin C kütüphanelerini kullanmanız gerekir. Örneğin, bir pencere oluşturmak, çizim yapmak veya kullanıcı girdilerini almak için.
+Ses ve Multimedya: ALSA (Linux), CoreAudio (macOS), WASAPI (Windows) gibi ses ve multimedya sistemleriyle etkileşim kurmak için. Örneğin, ses çalmak, kaydetmek veya video işlemek için.
+Veritabanı Bağlantıları (Bazı Durumlarda): PostgreSQL (libpq), MySQL (libmysqlclient) gibi bazı veritabanlarına düşük seviyede bağlanmak için C kütüphaneleri kullanılabilir. Rust'ın bu veritabanları için daha yüksek seviyeli crate'leri olsa da, bazı özel durumlarda C kütüphanelerine inmek gerekebilir.
+Mevcut, İyi Test Edilmiş ve Optimize Edilmiş Kütüphaneler: Belirli bir işlevi çok iyi yapan, yıllardır kullanılan ve performans açısından optimize edilmiş C kütüphaneleri varsa, Rust projenizde bu kütüphanelerden faydalanmak mantıklı olabilir. Bu, aynı işlevi Rust'ta sıfırdan geliştirmekten daha hızlı ve güvenilir bir çözüm sunabilir. Örneğin:
+
+Görüntü İşleme: OpenCV (libopencv).
+Bilimsel Hesaplama: BLAS, LAPACK gibi lineer cebir kütüphaneleri.
+Sıkıştırma ve Açma: zlib, liblzma.
+Donanım Erişim: Bazı özel donanımlarla (örneğin, belirli bir sensör veya özel bir aygıt) düşük seviyede iletişim kurmanız gerektiğinde, donanım üreticisinin sağladığı C tabanlı sürücüleri veya kütüphaneleri kullanmanız gerekebilir.
+
+Rust'ın C Kütüphaneleriyle Etkileşimi (FFI - Foreign Function Interface):
+
+Rust, C kütüphaneleriyle etkileşim kurmak için Foreign Function Interface (FFI) adı verilen bir mekanizma sunar. FFI sayesinde Rust kodu, harici C fonksiyonlarını çağırabilir ve C veri yapılarını kullanabilir. Ancak bu etkileşim güvenli olmayabilir ve dikkatli bir şekilde yönetilmesi gerekir çünkü Rust'ın bellek güvenliği garantileri C kodunda geçerli değildir.
+
+Örnekler:
+
+Grafik Uygulaması: Bir macOS uygulamasında pencere oluşturmak ve kullanıcı arayüzü çizmek için Apple'ın Cocoa C API'lerini kullanmanız gerekebilir. Rust'ta bu Cocoa API'lerine erişim sağlayan crate'ler bulunur ve bunlar FFI aracılığıyla Cocoa kütüphaneleriyle etkileşim kurar.
+Veritabanı Bağlantısı: PostgreSQL veritabanına düşük seviyede bağlanmak için Rust kodunuzda libpq C kütüphanesinin fonksiyonlarını FFI aracılığıyla çağırabilirsiniz.
+Görüntü İşleme: Bir Rust projesinde OpenCV kütüphanesini kullanarak görüntü işleme görevleri gerçekleştirebilirsiniz. Rust crate'leri, OpenCV'nin C++ API'lerinin C bağlayıcılarını (C bindings) kullanarak OpenCV fonksiyonlarına erişim sağlar.
+
+17. rustta bir fonksiyon yarattığımda bellek üzerinde neler oluyor ?
+
+- İlk aşama derleyici söz dizi kontrolü yapar
+- Sembol tablosuna kayıt işlemi gerçekleşir --> fonksiyonun adı ve adresi kaydedilir.
+- Type Check işlemi yapılır, parametrelerin ve dönüş tipinin doğru olup olmadığı analiz edilir.
+- Machine Koda çevirilir ve bu kod "TEXT SEGMENT" KISMINDA SAKLANIR.
+
+
+18. Fonksiyonu exec ettiğimizde neler gerçekleşir ?
+
+- Çağrı talimatı: İşlemci yani cpu fonksiyonun makine kodu adresine "call" talimatı yapar. Bu talimat fonksiyon adresini ( bellekteki başlangıç adresinin ) "STACK" üzerine kaydeder. ( Geri dönüş adresi gibi bu sayede cpu eski işini yapmaya kaldığı erden devam edebilir. )
+- Stack Frame Oluşturulması: Çağırılan fonksiyonun parametreleri ve fonksiyon içinde tanımlanan yerel değişkenler için oluşturulan bir bellek adresidir. Bu alana referanslar copy edilir ( Copy treatleri varsa ) veya adresleri oluştururlar.
+- Makine Kodunun Çalıştırılması: İşlemci fonksiyonun makine kodu talimatlarını satır satır işlemeye başlar. Stack Frame'deki değerlerle erişilir.
+- Return Aşaması : Fonksiyon bir değer döndürüyorsa (-> ReturnType), bu değer genellikle işlemcinin bir veya birkaç özel yazmacına (register) yerleştirilir veya eğer değer büyükse stack üzerinde bir alana yazılır ve çağıran fonksiyona bu alanın adresi iletilir.
+- Stack Frame'in Temizlenmesi : Fonksiyon yürütülmesi tamalandığında return edilen değer varsa alınır ve Stack frame'i temizlenir. Bu, stack pointer'ının fonksiyon çağrılmadan önceki konumuna geri getirilmesiyle yapılır, böylece fonksiyonun yerel değişkenleri için ayrılan bellek alanı geçersiz hale gelir.
+- Geri Dönüş: İşlemci, stack üzerine kaydedilen geri dönüş adresini okur ve programın fonksiyon çağrısından sonraki satırından çalışmaya devam eder.
+
+
+NOT: 
+Stack'in Rolü: Stack, fonksiyon çağrılarını yönetmek, yerel değişkenleri saklamak ve fonksiyonlardan geri dönmek için kritik bir rol oynar. Hızlı ve verimli bir bellek bölgesidir.
+Heap'in Rolü (Dolaylı): Fonksiyonlar doğrudan heap üzerinde bellek ayırmazlar (yerel değişkenler genellikle stack'tedir). Ancak, fonksiyon içinde String, Vec gibi dinamik boyutlu veri yapıları oluşturulursa, bu yapıların içerdiği veriler heap üzerinde saklanır ve bu yapılar (pointer ve kapasite bilgileri) stack üzerinde yerel değişkenler olarak tutulur. Fonksiyon sona erdiğinde, bu stack üzerindeki değişkenler temizlenir ve eğer sahiplik doğru yönetilmemişse (örneğin drop metodu implement edilmemişse), heap üzerindeki bellek sızıntısına yol açılabilir. Rust'ın sahiplik ve ömür sistemi bu tür sızıntıları engeller.
+
+
+
+19. Stack Frame içine kaydedilen arkadaşlar yeni birer adrese mi sahip olurlar ? Çünkü rut owner kurallarına göre bir değerin bir sahibi olabilir.
+
+
+
+20. &str ile &'static str arasındaki fark nedir ?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
