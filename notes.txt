@@ -5,7 +5,15 @@
 ## FONKSİYONLAR
 
 
+* <FunctionQualifiers> + fn + <func-name> + ( params ) + FunctionReturnType + WhereClause  + {} veya ;              // ( BlockExpression | ; )
 
+
+* FunctionQualifiers = const, async, safe | unsafe, extern Abi             			                     // ( Abi = Application Binary Interface )
+
+
+* params = Self parametresi ( metodlar için OOP'de ) ve bizim oluşturabileceğimiz parametreler olarak ikiye ayrılır.
+ 
+ - self, &self, &mut self              // Bağımsız yani stand-alone fonksiyonlarda self parametresi olmaz!! Sadece metodlar için geçerlidir.
 
 
 
@@ -674,6 +682,9 @@ fn main() {
 - Localimizde buit-in gelen dökümantasyonları açar.
 
 
+* rustup doc --references
+
+
 
 
 
@@ -874,7 +885,40 @@ Heap'in Rolü (Dolaylı): Fonksiyonlar doğrudan heap üzerinde bellek ayırmazl
 
 20. &str ile &'static str arasındaki fark nedir ?
 
+* Life-time ile alakalı bir konudur. Eğer bir string değişkenin ömrünü program sonuna kadar tutmak istiyorsak &'statik str kullanırız. Örneğin bir fonksiyonun string bir değer return etmesini istiyorsak fonksiyon scop dışına çıktığında da bu string'in yaşamasını sağlamalıyız.
 
+* Eğer bir fonksiyon bir referans döndürüyorsa ( &str ), derleyici o referansın döndürülen değerden daha uzun yaşayacağından emin olmak ister.
+
+* Derleyici, fonksiyonun döndürdüğü &str'ın yani referansın fonksiyon sona erdikten sonra da geçerli olması gerektiğini varsayar. Ancak, eğer fonksiyon yerel bir String oluşturup onun bir dilimini döndürseydi, o String fonksiyon sonunda düşeceği için döndürülen referans geçersiz hale gelirdi (dangling reference).
+
+!!!
+* &str bir referanstır ve "işte bu" demekle aynı şeydir. Bu dediğimiz şey scope kapsamı içinde bir ömre sahip olacağından; bir fonksiyonun &str döndürmesi mümkün değildir.
+!!!
+
+
+Not: 
+* x : &str = ""; dediğimizde x artık read only memory'de bir adrese referans eder.
+
+
+* String Döndürmek: Fonksiyon bir kutu (heap belleği) oluşturur ve içindeki eşyayı (string verisi) size verir. Kutunun sahibi artık sizsiniz. Fonksiyonun kendi kutusu gitse bile, içindeki eşya hala sizde güvendedir.
+&str Döndürmek (Hatalı Durum): Fonksiyon kendi odasındaki bir eşyayı (yerel String) işaret ederek "işte bu!" der. Siz odaya bakarsınız ve eşyayı görürsünüz. Ancak fonksiyon odadan çıktığında (kapsam dışına çıktığında), oda ve içindeki eşya kaybolur. Sizin işaret ettiğiniz yer artık boştur.
+
+
+21. &str'nin bir verinin sahibi olmasını nasıl sağlarım ?
+
+* &str türündeki bir değişkenin doğrudan o veriye sahip olmasını sağlayamazsın. Çünkü &str doğası gereği bir referanstır ve sahiplik (ownership) kavramı referanslarla değil, sahibi olunan veri türleriyle (örneğin String, Vec, özel struct'lar vb.) ilişkilidir. Eğer bir metin verisinin sahibi olmak istiyorsan, &str yerine String türünü kullanmalısın.
+
+* .to_string() metodu ile veya String::from() metoduyla &str türünde bir değişkenin referans ettiği verinin sahibi olabilirsin.
+
+
+22. Sahiplik Nedir ?
+
+* Sahiplik, bir değerin ne zaman serbest bırakılacağını (bellekten silineceğini) belirleyen bir mekanizmadır. Referanslar, kendi başlarına bir bellek alanı yönetmezler. Sadece başka bir yerde bulunan verilere "bakarlar". Eğer bir &str sahipliğe sahip olsaydı, referans ettiği asıl veri ne zaman serbest bırakılmalıydı? Bu kafa karıştırıcı ve güvenli olmayan bir durum yaratırdı.
+
+
+23. &str Borrow nedir ?
+
+* &str, Rust'ın ödünç alma (borrowing) sisteminin bir parçasıdır. Ödünç alma, bir değerin sahipliğini almadan ona erişim sağlamanın bir yoludur. Referanslar, ödünç alınan değerlere erişmek için kullanılır. Sahiplik ve ödünç alma, Rust'ın bellek güvenliği modelinin temelini oluşturur.
 
 
 

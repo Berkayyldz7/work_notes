@@ -1,0 +1,59 @@
+struct Kopek {
+    isim: String,
+    enerji: u32,
+}
+
+impl Kopek {
+    fn havla(&self) {
+        println!("{} havlıyor!", self.isim);
+    }
+
+    fn oyna(&mut self) {
+        if self.enerji > 10 {
+            self.enerji -= 10;
+        }
+    }
+}
+
+fn main() {
+    let mut max = Kopek { isim: "Max".to_string(), enerji: 50 };
+    let minnos = Kopek { isim: "Minnos".to_string(), enerji: 5 };
+
+    max.havla();
+    minnos.oyna();
+}
+
+
+Şimdi bu kod çalışırken bellekte neler olduğuna bakalım:
+
+1. let mut max = Kopek { isim: "Max".to_string(), enerji: 50 };
+
+Stack: main fonksiyonu başladığında, max adında bir değişken için stack üzerinde bir alan ayrılır.
+Heap: String türündeki isim alanı için, "Max" metninin kendisi heap üzerinde bir yere ayrılır. max.isim aslında bu heap üzerindeki verinin adresini (bir pointer) stack üzerinde saklar. u32 türündeki enerji alanı (50 değeri) doğrudan max değişkeninin stack üzerindeki ayrılan alanında saklanır.
+Özet: max değişkeninin kendisi stack'te bulunur, ancak içindeki String verisi heap'te yer alır.
+2. let minnos = Kopek { isim: "Minnos".to_string(), enerji: 5 };
+
+Stack: minnos adında bir değişken için stack üzerinde ayrı bir alan ayrılır.
+Heap: "Minnos" metni için heap üzerinde farklı bir yer ayrılır ve minnos.isim bu adresi stack'te saklar. minnos.enerji (5 değeri) doğrudan minnos'un stack alanında saklanır.
+Özet: minnos da max gibi stack'te bulunur ve String verisi heap'tedir.
+3. max.havla();
+
+havla metodu çağrıldığında, max değişkeninin ödünç alınmış bir referansı (&self) bu metoda geçirilir. Bu, havla fonksiyonunun stack çerçevesinde, max'in stack üzerindeki adresini içeren bir pointer oluştuğu anlamına gelir.
+havla metodu içinde self.isim'e erişildiğinde, bu pointer takip edilerek max'in stack üzerindeki isim alanına ulaşılır. Bu alan da heap üzerindeki "Max" metninin adresini içerir. Bu adres kullanılarak "Max" metnine erişilir ve ekrana yazdırılır.
+havla metodu tamamlandığında, ödünç alınan referansın (pointer) ömrü sona erer ve stack çerçevesi temizlenir. max değişkeninin sahipliği main fonksiyonunda kalmaya devam eder.
+4. minnos.oyna();
+
+oyna metodu çağrıldığında, minnos değişkeninin mutable bir ödünç alınmış referansı (&mut self) bu metoda geçirilir. Bu, oyna fonksiyonunun stack çerçevesinde, minnos'un stack üzerindeki adresini içeren bir mutable pointer oluştuğu anlamına gelir.
+oyna metodu içinde self.enerji'ye erişilip değeri kontrol edilir (5 > 10 false olduğu için enerji azaltılmaz). self.enerji'ye erişim, minnos'un stack üzerindeki enerji alanına doğrudan erişim anlamına gelir.
+oyna metodu tamamlandığında, mutable ödünç alınan referansın ömrü sona erer ve stack çerçevesi temizlenir. minnos değişkeninin sahipliği main fonksiyonunda kalmaya devam eder.
+Önemli Kavramlar ve Bellek Yönetimi:
+
+Stack: Genellikle fonksiyon çağrıları, yerel değişkenler ve sabit boyutlu veriler için kullanılır. Hızlı erişime sahiptir ve bellek yönetimi otomatiktir (fonksiyon çıkışında alan serbest bırakılır).
+Heap: Dinamik olarak boyutlandırılabilen veriler (örneğin String, Vec) için kullanılır. Bellek yönetimi daha karmaşıktır ve Rust'ta sahiplik (ownership) sistemi ve ödünç alma (borrowing) kuralları ile sağlanır.
+Sahiplik (Ownership): Bir değerin hangi değişkenin "sahibinde" olduğunu takip eder. Bir değerin yalnızca bir sahibi olabilir. Sahiplik kapsam dışına çıktığında (scope ends), değer otomatik olarak serbest bırakılır (drop edilir), bu da heap üzerindeki belleğin geri kazanılmasını sağlar.
+Ödünç Alma (Borrowing): Bir değerin sahipliğini almadan ona referanslar aracılığıyla erişmeyi sağlar (& ve &mut). Ödünç alma kuralları (aynı anda birden fazla değişmez referans veya tek bir mutable referans olabilir) bellek güvenliğini garanti eder.
+Özet:
+
+Rust'ta bellek yönetimi, sahiplik ve ödünç alma sistemi üzerine kuruludur. Değerler stack'te veya heap'te saklanabilir. Metotlara self, &self veya &mut self aracılığıyla geçirilen referanslar, metotların nesnelerin verilerine güvenli bir şekilde erişmesini ve gerekirse değiştirmesini sağlar. Sahiplik kuralları, dangling pointer (geçersiz bellek adreslerine erişim) gibi yaygın bellek hatalarını engeller ve otomatik bellek yönetimini (çöp toplama olmadan) mümkün kılar.
+
+Umarım bu açıklama, basit bir Rust programı çalışırken bellekte neler döndüğüne dair temel bir fikir vermiştir. Daha karmaşık senaryolarda (örneğin, çoklu iş parçacığı, akıllı pointerlar) bellek yönetimi daha incelikli olabilir, ancak temel prensipler aynı kalır.
