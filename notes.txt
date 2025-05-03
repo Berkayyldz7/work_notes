@@ -5,7 +5,7 @@
 ## FONKSİYONLAR
 
 
-* <FunctionQualifiers> + fn + <func-name> + ( params ) + FunctionReturnType + WhereClause  + {} veya ;              // ( BlockExpression | ; )
+# <FunctionQualifiers> + fn + <func-name> + ( params ) + FunctionReturnType + WhereClause  + {} veya ;              // ( BlockExpression | ; )
 
 
 * FunctionQualifiers = const, async, safe | unsafe, extern Abi             			                     // ( Abi = Application Binary Interface )
@@ -14,6 +14,29 @@
 * params = Self parametresi ( metodlar için OOP'de ) ve bizim oluşturabileceğimiz parametreler olarak ikiye ayrılır.
  
  - self, &self, &mut self              // Bağımsız yani stand-alone fonksiyonlarda self parametresi olmaz!! Sadece metodlar için geçerlidir.
+
+
+# Where Clause 
+
+* Genelde generic fonksiyonlarda ( Her türü kabul eden <T> fonksiyonlar ) tür kısıtlaması için kullanılır.
+
+
+fn my_generic_func<T>(deger:T)
+where
+T:PartialOrd, 
+T:Copy,
+T:std::ops::Mul<f32, Output = T>
+{
+    let kopya_deger = deger *  0.1;
+    if deger > kopya_deger {
+        println!("Değer kopyasından büyük.");
+    } else {
+        println!("Değer kopyasından büyük değil.");
+    }
+}
+
+
+
 
 
 
@@ -67,9 +90,30 @@
 	   Bir referans (&) bir değerin sahipliğini almaz, sadece belirli bir süre için ona erişim izni alır.
 
 
+
+
+
 ## DATA TYPES
 
+
 * Rust statically typed language'dir. Yani derleme zamanında her bir değişkenin type bilgisini bilmesi gerekir.
+* let x = 0.1234_f32;  // numeric verilerde _ koyarakta type tanımlaması yapabiliyoruz.
+
+
+# VERI DONUSTURME
+
+
+* as keywordü ile farklı veri tipleri arasında dönüş sağlayabiliriz.
+
+- let x = 2110_u64;
+
+  let translated_val = x as i32;
+
+
+  let z = 0.002_f64;
+  let t_value = z as u32;   // Çıktı 0'dır çünkü float değeri en yakın basamaktaki tam sayı değerine yuvarlar !!!
+
+
 
 
 # INTEGERS AND UNSIGNED
@@ -116,6 +160,7 @@ NOT:
 # FLOATS
 
 * Default f64'dür. 
+* let x = 0.1234_f32;  // numeric verilerde _ koyarak da type tanımlaması yapabiliyoruz.
 
 
 
@@ -685,6 +730,11 @@ fn main() {
 * rustup doc --references
 
 
+* dustup update stable
+
+- rustın en güncel ve stabil sürümünü getirir.
+
+
 
 
 
@@ -922,10 +972,18 @@ Not:
 
 
 
+24. Bir fonksiyonunn const olması yani derleme zamanında kullanılabilir olması ne demek ?
+
+* 
+Derleme Zamanı (Compile Time): Kodunuzun, bilgisayarın anlayacağı makine koduna çevrildiği aşamadır. Bu aşamada, dilin kurallarına uyulup uyulmadığı kontrol edilir ve optimizasyonlar yapılabilir.
+Çalışma Zamanı (Run Time): Derlenmiş kodun bilgisayar tarafından gerçekten çalıştırıldığı aşamadır. Programın değişken değerleri, kullanıcı girdileri gibi dinamik unsurları bu aşamada belirlenir.
 
 
 
 
+25. const fn (Sabit Fonksiyon) Nedir?
+
+* İşte kilit nokta burası: const fn olarak işaretlenmiş bir fonksiyon, eğer tüm girdi argümanları derleme zamanında biliniyorsa, sonucu da derleme zamanında hesaplanabilir. Başka bir deyişle, derleyici bu fonksiyonu daha programınız çalışmadan önce değerlendirebilir.
 
 
 
