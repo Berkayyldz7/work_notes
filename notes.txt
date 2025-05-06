@@ -39,10 +39,66 @@ T:std::ops::Mul<f32, Output = T>
 
 
 
+# CONST ( SABIT ) FONKSİYONLAR
+
+* Değeri derleme zamanında hesap edilen fonksiyonlardır yani run time'dan önce değeri hesaplanır ve kullanıma hazır hale getirilir.
+
+
+
+
+# EXTERN <ABI-NAME> FONKSIYONLAR
+
+* ABI = Application Binary Interface demektir ve o fonksiyonun hangi dilin kurallarına göre çağırılması ve run edilmesi gerektiğini söylemektedir.
+
+* ABI'ler başka dillerdeki fonksiyonları Rust'ta kullanabilmek için tasarlanmış yapılardır.
+
+-  Örneğin extern "C" fn dnm_func(){}; ifadesini ele alalım. Bu dnm_func() fonksiyonunun C dilinin kurallarına göre derleneceğini bize söyler.
+
+- extern "Rust" fn my_func(){}; kesinlikle fn my_func(){} demekle aynı şeydir. Çünkü bu ifade al bu fonksiyonu Rust'ın söz dizimine ve kurallarına göre derle demektir. Rusta bişey söylemesende fonksiyonu böyle derler zaten.
+
+
+Not: Extern fonksiyonlar unsafe{} blokları içinde kullanılır.
+
+
+
+
+# Fonksiyon Detay Bilgiler
+
+1. fn <identifier> (); dediğimiz anda ideentifier yani fonksiyon adı; fonksiyonu benzersiz bir şekilde tanımlayan 0 boyutlu bir değerdir. 
+
+- let bar(){}   --> bar; 0 boyutlu benzersiz bir değer olarak belleğe kaydedilir.
+
+
+2. Fonksiyon tanımladığımızda; o fonksiyon <usize>() yani sıfır boyutlu olacak şekilde oluşturulur.
+
+-
+
+3. Fonksiyon pointer'ı tanım almak için ":fn()" ifadesi kullanılır. Bu ilgili değişkene; fonksiyonun . Derleyici, sıfır boyutlu ben_fn değerini otomatik olarak (coerce ederek) bir fonksiyon işaretçisine dönüştürür. 
+
+
+- fn my_func(){}  
+- let func_ptr: fn() = my_func;
+
+
+Not. Coerce = tür dönüşümü
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 ## SAHİPLİK MEKANİZMASI
+
 
 * Yeri geldiğinde çok detaylı işlenecek ancak şimdilik şunların bilinmesi ve hatırlanması önemlidir.
 
@@ -88,6 +144,30 @@ T:std::ops::Mul<f32, Output = T>
 
 	 - Sahiplik prensibini ihlal etmeden verilere erişmenin bir yolu da ödünç almadır (referanslar aracılığıyla). 
 	   Bir referans (&) bir değerin sahipliğini almaz, sadece belirli bir süre için ona erişim izni alır.
+
+
+
+
+# SAHIPLER VE ISARETCILER ( OWNERS AND BORROWS )
+
+
+** SAHIPLER
+
+* Rust'ın temel prensibi sahipliktir. let x = 10; dediğinde, x değişkeni 10 değerinin sahibi olur. Değer doğrudan x'in temsil ettiği bellek alanında saklanır (genellikle stack'te). x bir işaretçi değil, doğrudan verinin kendisidir.
+
+* Aynı şekilde, let s = String::from("merhaba"); dediğinde, s değişkeni "merhaba" stringinin sahibi olur. String tipi, string verisini heap üzerinde saklar, ancak s değişkeni bu heap üzerindeki verinin sahipliğini tutan bir yapıdır (pointer, uzunluk ve kapasite bilgilerini içerir). s doğrudan "merhaba"nın işaretçisi değildir, sahipliğini yöneten bir "akıllı pointer" gibi düşünülebilir.
+
+
+** ISARETCILER (&, &mut, *const, *mut)
+
+* Işaretçiler, bir başka bellek konumunun adresini tutan özel tiplerdir. Rust'ta referanslar (&, &mut) ve ham işaretçiler (*const, *mut) olmak üzere iki tür işaretçi bulunur.
+
+* Referanslar (&, &mut): Ödünç alınmış değerlere erişmek için kullanılır. Sahiplik transferi yapmazlar. let y = &x; dediğinde, y, x'in değerinin bulunduğu bellek adresini tutan bir referanstır. y doğrudan x'in sahibi değildir.
+
+* Ham İşaretçiler (*const, *mut): Güvenli olmayan (unsafe) kod bloklarında düşük seviyeli bellek işlemleri için kullanılır. Derleyici tarafından ömürleri ve geçerlilikleri kontrol edilmez.
+
+
+
 
 
 
